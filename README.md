@@ -2,12 +2,15 @@
 
 Dashboard de supervision de la sécurité Microsoft 365.
 
+**Repository:** https://github.com/jalal4ever/m365-security-dashboard
+
 ## Fonctionnalités
 
 - **Secure Score** - Suivi du score de sécurité Microsoft
 - **Administrateurs** - Surveillance des rôles d'administration
 - **Licences** - Utilisation des licences Microsoft 365
 - **MFA** - Audit de l'authentification multifacteur
+- **Configuration Azure** - Interface web pour configurer les credentials Azure
 
 ## Prérequis
 
@@ -15,7 +18,7 @@ Dashboard de supervision de la sécurité Microsoft 365.
 - Docker Compose
 - Azure App Registration avec permissions Microsoft Graph
 
-## Configuration Azure AD
+## Configuration Azure AD (Option 1 - Fichier .env)
 
 1. Créer une App Registration dans Azure AD
 2. Ajouter les permissions API suivantes:
@@ -26,39 +29,53 @@ Dashboard de supervision de la sécurité Microsoft 365.
 3. Générer un Client Secret
 4. Copier `.env.example` vers `.env` et configurer les variables
 
+## Configuration Azure AD (Option 2 - Interface Web)
+
+Après avoir lancé l'application:
+1. Accéder à http://localhost:5173
+2. Cliquer sur l'icône Settings (en haut à droite)
+3. Entrer le Tenant ID, Client ID et Client Secret
+4. Cliquer sur "Test Connection" pour vérifier
+5. Cliquer sur "Save Configuration"
+
+Les credentials sont chiffrés (AES-256) avant stockage en base de données.
+
 ## Installation
 
 ```bash
-# Configuration des variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos valeurs Azure
-
 # Lancer les conteneurs
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 ```
 
 ## Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 5173 | Dashboard React |
-| Backend | 8000 | API FastAPI |
-| PostgreSQL | 5432 | Base de données |
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend | 5173 | http://localhost:5173 |
+| Backend API | 8000 | http://localhost:8000 |
+| API Docs | 8000 | http://localhost:8000/docs |
+| PostgreSQL | 5432 | localhost:5432 |
 
-## URLs
+## CI/CD GitHub Actions
 
-- Frontend: http://localhost:5173
-- API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+Le projet utilise GitHub Actions pour la validation automatique:
+
+- **Lint Backend** - Ruff + MyPy
+- **Lint Frontend** - ESLint + TypeScript
+- **Security Scan** - pip-audit + npm audit
+- **Docker Build** - Construction et test des containers
 
 ## Architecture
 
 ```
 m365-security-dashboard/
-├── backend/          # API FastAPI
-├── frontend/         # Dashboard React
-├── docker/          # Configuration Docker
-└── .env             # Variables d'environnement
+├── .github/workflows/   # CI/CD pipelines
+├── backend/             # API FastAPI
+│   ├── app/routers/    # API endpoints (incl. azure config)
+│   └── services/       # Services (encryption, graph client)
+├── frontend/            # Dashboard React
+│   └── src/pages/      # Pages (Settings)
+└── docker/             # Configuration Docker
 ```
 
 ## Développement

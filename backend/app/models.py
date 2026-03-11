@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
 from datetime import datetime
 from app.database import Base
+
+
+class AzureConfig(Base):
+    __tablename__ = "azure_config"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id_encrypted = Column(String)
+    client_id_encrypted = Column(String)
+    client_secret_hash = Column(String)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class SecurityScore(Base):

@@ -3,7 +3,8 @@ import SecureScoreWidget from './components/SecureScoreWidget'
 import AdminRolesWidget from './components/AdminRolesWidget'
 import LicenseWidget from './components/LicenseWidget'
 import MfaWidget from './components/MfaWidget'
-import { Shield, Users, Key, Lock } from 'lucide-react'
+import Settings from './pages/Settings'
+import { Shield, Users, Key, Lock, Settings as SettingsIcon } from 'lucide-react'
 
 interface SecurityData {
   score?: number
@@ -71,6 +72,7 @@ function App() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'settings'>('dashboard')
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -129,13 +131,26 @@ function App() {
     )
   }
 
+  if (currentPage === 'settings') {
+    return <Settings onBack={() => setCurrentPage('dashboard')} />
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary-600" />
-            <h1 className="text-2xl font-bold text-slate-900">M365 Security Dashboard</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className="h-8 w-8 text-primary-600" />
+              <h1 className="text-2xl font-bold text-slate-900">M365 Security Dashboard</h1>
+            </div>
+            <button
+              onClick={() => setCurrentPage('settings')}
+              className="p-2 hover:bg-slate-100 rounded-lg"
+              title="Settings"
+            >
+              <SettingsIcon className="h-6 w-6 text-slate-600" />
+            </button>
           </div>
         </div>
       </header>

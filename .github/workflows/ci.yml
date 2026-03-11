@@ -1,0 +1,91 @@
+name: CI - Build & Validate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install ruff mypy
+      
+      - name: Run Ruff linter
+        run: ruff check backend/
+      
+      - name: Run type check
+        run: mypy backend/
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Run TypeScript check
+        run: npm run build
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Audit Python dependencies
+        uses: pypa/pip-audit@main
+        with:
+          requirements: backend/requirements.txt
+      
+      - name: Audit NPM dependencies
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            try {
+              execSync('cd frontend && npm audit --audit-level=moderate', { stdio: 'inherit' });
+            } catch (error) {
+              process.exit(1);
+            }
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-lint, frontend-lint, security-scan]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker images
+        run: |
+          docker compose -f docker/docker-compose.yml build
+      
+      - name: Verify containers
+        run: |
+          docker compose -f docker/docker-compose.yml up -d
+          sleep 10
+          curl -f http://localhost:8000/docs || exit 1
+          curl -f http://localhost:5173 || exit 1
+          docker compose -f docker/docker-compose.yml down

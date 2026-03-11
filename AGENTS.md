@@ -2,12 +2,48 @@
 
 Ce fichier définit les agents spécialisés pour le projet M365 Security Dashboard.
 
+**Repository:** https://github.com/jalal4ever/m365-security-dashboard
+
 ## Règles Générales
 
 - Tous les agents travaillent uniquement dans le projet courant
 - Ne pas modifier les configurations système
 - Produire des modifications minimales
 - Documenter leurs actions
+- Pour tout changement significatif: créer une branche → PR → Code Review
+
+---
+
+## Agent GitHub
+
+**Rôle:** Gestion du cycle de vie Git et communication avec GitHub
+
+**Responsabilités:**
+- Créer et gérer les branches de développement
+- Orchestrer les commits atomiques avec messages descriptifs
+- Créer et gérer les Pull Requests
+- Exécuter les GitHub Actions et workflows CI/CD
+- Gérer les releases et tags
+- Documenter les changements dans le repo
+
+**Outils:**
+- `gh` CLI (GitHub CLI)
+- `git`
+- GitHub API
+- GitHub Actions
+
+**Workflow Standard:**
+1. Analyser le contexte de la tâche
+2. Créer une branche feature/fix-xxx
+3. Implémenter avec commits atomiques
+4. Pusher et créer une Pull Request
+5. Demander une review (Agent Security pour les changements critiques)
+6. Merger après validation
+
+**Règles de Commit:**
+- Messages en anglais avec convention Conventional Commits
+- `feat:`, `fix:`, `docs:`, `refactor:`, `security:`
+- Un commit par changement logique
 
 ---
 
@@ -145,6 +181,48 @@ Ce fichier définit les agents spécialisés pour le projet M365 Security Dashbo
 2. Identifier les goulots d'étranglement
 3. Proposer des optimisations
 4. Implémenter et valider
+
+---
+
+## Workflow de Build Multi-Agents
+
+Ce workflow définit comment les agents collaborent lors de chaque build/modification.
+
+### Cycle de Vie Standard
+
+```
+TÂCHE REÇUE
+     │
+     ▼
+┌─────────────┐    ┌─────────────┐
+│ Agent Dev   │───▶│ Agent GitHub│ (create branch)
+└─────────────┘    └─────────────┘
+     │                   │
+     ▼                   ▼
+┌─────────────────────────────────────────┐
+│        AGENTS ACTIVÉS SELON TÂCHE       │
+├─────────────────────────────────────────┤
+│ • Security → Agent Cyber Fix            │
+│ • Performance → Agent Optimizer         │
+│ • Bugs → Agent Debug                    │
+│ • Logs → Agent Observability            │
+└─────────────────────────────────────────┘
+     │
+     ▼
+┌─────────────┐    ┌─────────────┐
+│ Agent GitHub│───▶│  PUSH/PR    │
+└─────────────┘    └─────────────┘
+```
+
+### Règles de Validation par Type de Changement
+
+| Type de changement | Agents requis | Validation |
+|---------------------|----------------|------------|
+| Nouvelle fonctionnalité | Dev → Security → GitHub | Review obligatoire |
+| Correction sécurité | Dev → Cyber Fix → Security | Review Security |
+| Optimisation performance | Dev → Optimizer → GitHub | Tests performance |
+| Bug fix | Dev → Debug → GitHub | Tests unitaires |
+| Documentation | GitHub uniquement | Review simple |
 
 ---
 

@@ -2,7 +2,7 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import security, admins, licenses, mfa
+from app.routers import security, admins, licenses, mfa, azure
 from app.database import engine
 from app import models
 
@@ -34,6 +34,7 @@ app.include_router(security.router, prefix="/api", tags=["security"])
 app.include_router(admins.router, prefix="/api", tags=["admins"])
 app.include_router(licenses.router, prefix="/api", tags=["licenses"])
 app.include_router(mfa.router, prefix="/api", tags=["mfa"])
+app.include_router(azure.router, tags=["Azure Configuration"])
 
 
 @app.get("/api/health")
