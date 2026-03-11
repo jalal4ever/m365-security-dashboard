@@ -1,6 +1,7 @@
 import logging
 import json
 import traceback
+import os
 from datetime import datetime
 from typing import Optional, Any
 from fastapi import Request, status
@@ -8,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+os.makedirs("logs", exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
