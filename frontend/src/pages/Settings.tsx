@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft } from 'lucide-react'
+import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft, Github } from 'lucide-react'
+import GitHubIntegration from './GitHubIntegration'
 
 interface AzureConfig {
   tenant_id: string
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function Settings({ onBack }: Props) {
+  const [activeTab, setActiveTab] = useState<'azure' | 'github'>('azure')
   const [config, setConfig] = useState<AzureConfig | null>(null)
   const [tenantId, setTenantId] = useState('')
   const [clientId, setClientId] = useState('')
@@ -124,6 +126,10 @@ export default function Settings({ onBack }: Props) {
     }
   }
 
+  if (activeTab === 'github') {
+    return <GitHubIntegration onBack={() => setActiveTab('azure')} />
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -141,8 +147,33 @@ export default function Settings({ onBack }: Props) {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </button>
             <SettingsIcon className="h-8 w-8 text-primary-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Azure Configuration</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
           </div>
+        </div>
+        
+        <div className="flex gap-4 px-4 sm:px-6">
+          <button
+            onClick={() => setActiveTab('azure')}
+            className={`py-3 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'azure'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Shield className="h-4 w-4 inline mr-2" />
+            Azure
+          </button>
+          <button
+            onClick={() => setActiveTab('github')}
+            className={`py-3 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'github'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Github className="h-4 w-4 inline mr-2" />
+            GitHub
+          </button>
         </div>
       </header>
 

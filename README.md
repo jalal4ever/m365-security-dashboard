@@ -47,6 +47,47 @@ Les credentials sont chiffrés (AES-256) avant stockage en base de données.
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
+## Intégration GitHub
+
+L'application peut communiquer avec l'API GitHub pour gérer les repositories, pull requests et workflows.
+
+### Configuration
+
+1. Créer un Personal Access Token sur GitHub:
+   - Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Cocher les permissions: `repo`, `workflow`, `read:user`
+
+2. Configurer via l'interface:
+   - Aller dans Settings → onglet GitHub
+   - Entrer le token
+   - Cliquer "Test Connection"
+
+### Sécurité
+
+- Le token est stocké localement dans le navigateur (localStorage)
+- Pour une utilisation serveur, définir `GITHUB_TOKEN` dans les variables d'environnement
+- Les logs ne contiennent jamais le token en clair
+
+### API Endpoints
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/github/status` | Vérifier configuration |
+| GET | `/api/github/user` | Obtenir info utilisateur |
+| GET | `/api/github/repos` | Lister les repositories |
+| POST | `/api/github/repos` | Créer un repository |
+| POST | `/api/github/repos/{owner}/{repo}/pulls` | Créer une PR |
+| GET | `/api/github/repos/{owner}/{repo}/pulls` | Lister les PRs |
+| GET | `/api/github/repos/{owner}/{repo}/actions` | Voir les workflows |
+
+### Logging
+
+Les opérations GitHub sont journalisées avec:
+- Timestamp
+- Type d'opération
+- Résultat (success/failed)
+- Détails de l'erreur en cas d'échec
+
 ## Services
 
 | Service | Port | URL |
