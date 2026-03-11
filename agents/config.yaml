@@ -1,0 +1,22 @@
+version: "1.0"
+project: "m365-security-dashboard"
+
+agents:
+  security:
+    enabled: true
+    checks: [cors, dependencies, env_vars]
+  architecture:
+    enabled: true
+    checks: [structure, performance, database_models]
+  dev:
+    enabled: true
+    auto_fix: false
+
+security:
+  cors_allowed_origins:
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+  required_env_vars:
+    - AZURE_CLIENT_ID
+    - AZURE_TENANT_ID
+    - DATABASE_URL

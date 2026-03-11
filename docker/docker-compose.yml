@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: m365-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-m365dashboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-m365dashboard}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - m365-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-m365dashboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: m365-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-m365dashboard}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-m365dashboard}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - SECRET_KEY=${SECRET_KEY:-changeme}
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://frontend:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - m365-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: m365-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - m365-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  m365-network:
+    driver: bridge
