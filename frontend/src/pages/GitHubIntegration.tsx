@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Github, GitPullRequest, Play, CheckCircle, XCircle, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { Github, GitPullRequest, Play, CheckCircle, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react'
 
 interface Props {
   onBack: () => void
