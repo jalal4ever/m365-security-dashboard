@@ -3,7 +3,7 @@ import SecureScoreWidget from './components/SecureScoreWidget'
 import LicenseWidget from './components/LicenseWidget'
 import MfaWidget from './components/MfaWidget'
 import Settings from './pages/Settings'
-import { Shield, Users, Key, Lock, Settings as SettingsIcon } from 'lucide-react'
+import { Shield, Key, Lock, Settings as SettingsIcon } from 'lucide-react'
 
 interface SecurityData {
   score?: number
@@ -155,7 +155,7 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6 flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Shield className="h-6 w-6 text-blue-600" />
@@ -164,18 +164,6 @@ function App() {
                 <p className="text-sm text-slate-500">Secure Score</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {data?.security?.percentage?.toFixed(1) || '0'}%
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6 flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Administrateurs globaux</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {data?.admins?.global_admins ?? 0}
                 </p>
               </div>
             </div>
