@@ -1,5 +1,5 @@
 import httpx
-from services.graph_client import get_graph_headers
+from services.graph_client import get_graph_headers, is_configured
 
 
 PRIVILEGED_ROLES = [
@@ -15,6 +15,14 @@ PRIVILEGED_ROLES = [
 
 
 async def get_admin_roles():
+    if not is_configured():
+        return {
+            "total_admins": 0,
+            "privileged_admins": 0,
+            "admins": [],
+            "error": "Azure credentials not configured"
+        }
+
     headers = get_graph_headers()
     async with httpx.AsyncClient() as client:
         response = await client.get(

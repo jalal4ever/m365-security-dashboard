@@ -1,8 +1,18 @@
 import httpx
-from services.graph_client import get_graph_headers
+from services.graph_client import get_graph_headers, is_configured
 
 
 async def get_secure_score():
+    if not is_configured():
+        return {
+            "score": 0,
+            "max_score": 0,
+            "percentage": 0,
+            "enabled_standards": [],
+            "licensed": False,
+            "error": "Azure credentials not configured"
+        }
+
     headers = get_graph_headers()
     async with httpx.AsyncClient() as client:
         response = await client.get(
