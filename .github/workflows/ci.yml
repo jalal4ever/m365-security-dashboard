@@ -55,7 +55,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+      - name: Install system dependencies for psycopg2
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
       - name: Audit Python dependencies
         uses: pypa/pip-audit@main
         with:

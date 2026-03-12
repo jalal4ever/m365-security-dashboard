@@ -30,8 +30,8 @@ async def get_licenses():
                 "service_plan_names": [sp.get("serviceName") for sp in sku.get("servicePlans", [])]
             })
         
-        total_consumed = sum(l["consumed_units"] for l in licenses)
-        total_available = sum(l["available_licenses"] for l in licenses)
+        total_consumed = sum(license_entry["consumed_units"] for license_entry in licenses)
+        total_available = sum(license_entry["available_licenses"] for license_entry in licenses)
         
         return {
             "licenses": licenses,

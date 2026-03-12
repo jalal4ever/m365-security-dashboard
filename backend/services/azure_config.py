@@ -13,7 +13,7 @@ class AzureConfigService:
         self.db = db
 
     def get_config(self) -> dict | None:
-        config = self.db.query(AzureConfig).filter(AzureConfig.is_active == True).first()
+        config = self.db.query(AzureConfig).filter(AzureConfig.is_active).first()
         if not config:
             return None
         return {
@@ -25,7 +25,7 @@ class AzureConfigService:
         }
 
     def save_config(self, tenant_id: str, client_id: str, client_secret: str) -> dict:
-        existing = self.db.query(AzureConfig).filter(AzureConfig.is_active == True).first()
+        existing = self.db.query(AzureConfig).filter(AzureConfig.is_active).first()
         
         if existing:
             existing.tenant_id_encrypted = encrypt_value(tenant_id)
@@ -59,7 +59,7 @@ class AzureConfigService:
         return {"status": "error", "message": "Connection failed - please verify credentials"}
 
     def delete_config(self) -> dict:
-        config = self.db.query(AzureConfig).filter(AzureConfig.is_active == True).first()
+        config = self.db.query(AzureConfig).filter(AzureConfig.is_active).first()
         if config:
             config.is_active = False
             self.db.commit()

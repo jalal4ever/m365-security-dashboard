@@ -37,7 +37,6 @@ async def get_admin_roles():
         admins = []
         
         for role in data.get("value", []):
-            role_template_id = role.get("roleTemplateId")
             role_name = role.get("displayName")
             
             members_response = await client.get(
@@ -57,7 +56,6 @@ async def get_admin_roles():
                     })
         
     global_admins = len([a for a in admins if a["role_name"] == "Global Administrator"])
-    print("DEBUG global admins", global_admins)
     return {
         "total_admins": len(admins),
         "privileged_admins": len([a for a in admins if a["is_privileged"]]),

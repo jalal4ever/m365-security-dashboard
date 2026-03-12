@@ -1,5 +1,4 @@
 import logging
-import json
 import traceback
 import os
 from datetime import datetime
