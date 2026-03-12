@@ -57,6 +57,7 @@ async def get_admin_roles():
                     })
         
     global_admins = len([a for a in admins if a["role_name"] == "Global Administrator"])
+    print("DEBUG global admins", global_admins)
     return {
         "total_admins": len(admins),
         "privileged_admins": len([a for a in admins if a["is_privileged"]]),
