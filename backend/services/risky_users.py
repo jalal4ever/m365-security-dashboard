@@ -2,7 +2,7 @@ import httpx
 from services.graph_client import get_graph_headers, is_configured
 
 
-async def get_risky_users(config_id: int = None):
+async def get_risky_users():
     """
     Fetch risky users from Microsoft Identity Protection (Azure AD).
     
@@ -12,7 +12,7 @@ async def get_risky_users(config_id: int = None):
     
     API: https://graph.microsoft.com/v1.0/identityProtection/riskyUsers
     """
-    if not is_configured(config_id):
+    if not is_configured():
         return {
             "total_risky_users": 0,
             "risk_levels": {"high": 0, "medium": 0, "low": 0},
@@ -20,7 +20,7 @@ async def get_risky_users(config_id: int = None):
             "error": "Azure credentials not configured"
         }
 
-    headers = get_graph_headers(config_id)
+    headers = get_graph_headers()
     
     async with httpx.AsyncClient() as client:
         try:
@@ -73,7 +73,7 @@ async def get_risky_users(config_id: int = None):
             }
 
 
-async def get_risk_history(config_id: int = None):
+async def get_risk_history():
     """
     Fetch risk events history for trend analysis.
     
@@ -82,7 +82,7 @@ async def get_risk_history(config_id: int = None):
     
     API: https://graph.microsoft.com/v1.0/identityProtection/riskDetections
     """
-    if not is_configured(config_id):
+    if not is_configured():
         return {
             "total_events": 0,
             "by_risk_type": {},
@@ -91,7 +91,7 @@ async def get_risk_history(config_id: int = None):
             "error": "Azure credentials not configured"
         }
 
-    headers = get_graph_headers(config_id)
+    headers = get_graph_headers()
     
     async with httpx.AsyncClient() as client:
         try:

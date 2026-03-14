@@ -11,5 +11,5 @@ async def security_score():
 
 
 @router.get("/security/risky-users")
-async def risky_users(config_id: int | None = Query(None, description="Azure config ID")):
-    return await get_risky_users(config_id)
+async def risky_users():
+    return await get_risky_users()

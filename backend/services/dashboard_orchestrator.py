@@ -34,7 +34,7 @@ async def get_dashboard_overview(config_id: int = None) -> dict[str, Any]:
     - Error isolation (one service failure doesn't break others)
     - Caching to avoid redundant API calls
     """
-    if not is_configured(config_id):
+    if not is_configured():
         return {
             "error": "Azure credentials not configured",
             "kpis": {},
@@ -50,7 +50,7 @@ async def get_dashboard_overview(config_id: int = None) -> dict[str, Any]:
     
     tasks = [
         _fetch_with_timeout(get_secure_score(config_id), "secure_score", 15),
-        _fetch_with_timeout(get_risky_users(config_id), "risky_users", 15),
+        _fetch_with_timeout(get_risky_users(), "risky_users", 15),
         _fetch_with_timeout(get_defender_alerts(config_id), "defender_alerts", 15),
         _fetch_with_timeout(get_device_compliance(config_id), "device_compliance", 20),
         _fetch_with_timeout(get_threat_trends(config_id), "threat_trends", 20),

@@ -28,6 +28,7 @@ function RiskyUsersWidget({ data }: RiskyUsersWidgetProps) {
   const high = data?.risk_levels?.high || 0
   const medium = data?.risk_levels?.medium || 0
   const low = data?.risk_levels?.low || 0
+  const error = data?.error
 
   const totalLevels = high + medium + low || 1
 
@@ -39,6 +40,9 @@ function RiskyUsersWidget({ data }: RiskyUsersWidgetProps) {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Utilisateurs à risque</h2>
           <p className="text-xs text-slate-500">Azure Identity Protection</p>
+          {error && (
+            <p className="text-[11px] text-rose-600 mt-1">{error}</p>
+          )}
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold text-rose-600">{total}</p>
