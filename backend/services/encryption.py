@@ -1,11 +1,10 @@
 import os
 import base64
+import bcrypt
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
-from passlib.context import CryptContext
 
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme-default-key-for-development").encode()
-PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def _derive_key(key: bytes) -> bytes:
@@ -37,12 +36,16 @@ def decrypt_value(encrypted: str) -> str:
 
 
 def hash_password(password: str) -> str:
-    truncated = password[:72] if len(password) > 72 else password
-    return PWD_CONTEXT.hash(truncated)
+    truncated = password[:72].encode() if len(password) > 72 else password.encode()
+    return bcrypt.hashpw(truncated, bcrypt.gensalt()).decode()
 
 
 def verify_password(plaintext: str, hashed: str) -> bool:
-    return PWD_CONTEXT.verify(plaintext, hashed)
+    try:
+        truncated = plaintext[:72].encode() if len(plaintext) > 72 else plaintext.encode()
+        return bcrypt.checkpw(truncated, hashed.encode())
+    except Exception:
+        return False
 
 
 def test_azure_connection(tenant_id: str, client_id: str, client_secret: str) -> bool:

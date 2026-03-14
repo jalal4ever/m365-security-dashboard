@@ -2,6 +2,9 @@ import httpx
 from services.graph_client import get_graph_headers
 
 
+M365_BUSINESS_PREMIUM_SKU_ID = "c592b8f5-12e6-46e6-98b1-d5930b6b2fbe"
+
+
 async def get_licenses():
     headers = get_graph_headers()
     async with httpx.AsyncClient() as client:
@@ -17,6 +20,12 @@ async def get_licenses():
         licenses = []
         
         for sku in data.get("value", []):
+            sku_id = sku.get("skuId", "").lower().replace("-", "")
+            target_sku = M365_BUSINESS_PREMIUM_SKU_ID.replace("-", "")
+            
+            if sku_id != target_sku:
+                continue
+                
             consumed = sku.get("consumedUnits", 0)
             total = sku.get("prepaidUnits", {}).get("enabled", 0)
             available = total - consumed

@@ -10,6 +10,7 @@ class AzureConfig(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     tenant_id_encrypted: Mapped[str] = mapped_column(String)
     client_id_encrypted: Mapped[str] = mapped_column(String)
+    client_secret_encrypted: Mapped[str] = mapped_column(String)
     client_secret_hash: Mapped[str] = mapped_column(String)
     tenant_name: Mapped[str] = mapped_column(String, nullable=True)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)

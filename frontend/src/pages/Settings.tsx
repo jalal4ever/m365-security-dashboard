@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft, ArrowRight, Star, StarOff } from 'lucide-react'
+import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft, ArrowRight, Star, Plus, Building2, Edit2, LayoutDashboard } from 'lucide-react'
 
 interface AzureConfig {
+  id?: number
   tenant_id: string
   client_id: string
   tenant_name: string | null
@@ -16,7 +17,8 @@ interface Props {
 }
 
 export default function Settings({ onBack }: Props) {
-  const [config, setConfig] = useState<AzureConfig | null>(null)
+  const [configs, setConfigs] = useState<AzureConfig[]>([])
+  const [selectedConfig, setSelectedConfig] = useState<AzureConfig | null>(null)
   const [tenantId, setTenantId] = useState('')
   const [clientId, setClientId] = useState('')
   const [clientSecret, setClientSecret] = useState('')
@@ -28,22 +30,33 @@ export default function Settings({ onBack }: Props) {
   const [testing, setTesting] = useState(false)
   const [testPassed, setTestPassed] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isNew, setIsNew] = useState(false)
 
   const apiUrl = import.meta.env.VITE_API_URL || ''
 
-  useEffect(() => {
-    fetch(`${apiUrl}/api/azure/config`)
+  const loadConfigs = () => {
+    fetch(`${apiUrl}/api/azure/configs`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.tenant_id) {
-          setConfig(data)
-          setTenantId(data.tenant_id)
-          setClientId(data.client_id)
-          setTenantName(data.tenant_name || '')
-          setIsDefault(data.is_default || false)
-        }
+        setConfigs(data)
       })
       .finally(() => setLoading(false))
+  }
+
+  const selectConfig = async (config: AzureConfig) => {
+    setSelectedConfig(config)
+    setTenantId(config.tenant_id)
+    setClientId(config.client_id)
+    setClientSecret('')
+    setTenantName(config.tenant_name || '')
+    setIsDefault(config.is_default || false)
+    setTestPassed(false)
+    setIsNew(false)
+    setMessage(null)
+  }
+
+  useEffect(() => {
+    loadConfigs()
   }, [apiUrl])
 
   const handleSave = async () => {
@@ -75,15 +88,12 @@ export default function Settings({ onBack }: Props) {
       const data = await res.json()
 
       if (data.status === 'success') {
-        setMessage({ type: 'success', text: 'Configuration enregistrée avec succès' })
+        const name = tenantName || `Application ${Date.now()}`
+        setMessage({ type: 'success', text: `${name} enregistrée avec succès` })
         setClientSecret('')
-        setConfig(prev => prev ? { 
-          ...prev, 
-          tenant_id: tenantId, 
-          client_id: clientId,
-          tenant_name: tenantName,
-          is_default: isDefault
-        } : null)
+        setTestPassed(false)
+        setIsNew(false)
+        loadConfigs()
       } else {
         setMessage({ type: 'error', text: data.message || 'Échec de l\'enregistrement' })
       }
@@ -132,26 +142,48 @@ export default function Settings({ onBack }: Props) {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer la configuration Azure ?')) return
+    if (!selectedConfig?.id || !confirm('Êtes-vous sûr de vouloir supprimer cette configuration Azure ?')) return
 
     try {
-      const res = await fetch(`${apiUrl}/api/azure/config`, { method: 'DELETE' })
+      const res = await fetch(`${apiUrl}/api/azure/config/${selectedConfig.id}`, { method: 'DELETE' })
       if (res.ok) {
-        setConfig(null)
+        setSelectedConfig(null)
         setTenantId('')
         setClientId('')
         setClientSecret('')
         setTenantName('')
         setIsDefault(false)
-        setMessage({ type: 'success', text: 'Configuration supprimée' })
+        setTestPassed(false)
+        setMessage({ type: 'success', text: 'Application supprimée avec succès' })
+        loadConfigs()
       }
     } catch {
       setMessage({ type: 'error', text: 'Échec de la suppression' })
     }
   }
 
-  const handleGoToDashboard = () => {
-    onBack()
+  const handleSetDefault = async (config: AzureConfig) => {
+    if (!config.id) return
+    
+    try {
+      await fetch(`${apiUrl}/api/azure/default/${config.id}`, { method: 'POST' })
+      setMessage({ type: 'success', text: `${config.tenant_name || 'Application'} définie par défaut` })
+      loadConfigs()
+    } catch {
+      setMessage({ type: 'error', text: 'Échec de la définition par défaut' })
+    }
+  }
+
+  const handleNew = () => {
+    setSelectedConfig(null)
+    setTenantId('')
+    setClientId('')
+    setClientSecret('')
+    setTenantName('')
+    setIsDefault(false)
+    setTestPassed(false)
+    setIsNew(true)
+    setMessage(null)
   }
 
   if (loading) {
@@ -169,38 +201,30 @@ export default function Settings({ onBack }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg">
-                <ArrowLeft className="h-5 w-5 text-slate-600" />
+                <LayoutDashboard className="h-5 w-5 text-slate-600" />
               </button>
               <SettingsIcon className="h-8 w-8 text-primary-600" />
               <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
             </div>
-            <button
-              onClick={handleGoToDashboard}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              Dashboard
-              <ArrowRight className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Shield className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-slate-900">Configuration Microsoft Azure</h2>
-            {config?.is_active && (
-              <span className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" /> Connecté
-              </span>
-            )}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Shield className="h-6 w-6 text-blue-600" />
+              <h2 className="text-xl font-semibold text-slate-900">Applications Azure</h2>
+            </div>
+            <button
+              onClick={handleNew}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle application
+            </button>
           </div>
-
-          <p className="text-slate-600 mb-6 text-sm">
-            Entrez les identifiants de votre application Azure App Registration pour activer le dashboard.
-            Vos identifiants sont chiffrés avant stockage.
-          </p>
 
           {message && (
             <div className={`p-4 rounded-lg mb-6 flex items-center gap-2 ${
@@ -211,7 +235,98 @@ export default function Settings({ onBack }: Props) {
             </div>
           )}
 
-          <div className="space-y-4">
+          {!selectedConfig && !isNew ? (
+            <div>
+              {configs.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-lg">
+                  <Building2 className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-4">Aucune application configurée</p>
+                  <button
+                    onClick={handleNew}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                  >
+                    Ajouter une application
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {configs.map((config) => (
+                    <div
+                      key={config.id}
+                      className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-slate-900">
+                              {config.tenant_name || `Application ${config.id}`}
+                            </h3>
+                            {config.is_default && (
+                              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                                Par défaut
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 mb-4 truncate">
+                        {config.tenant_id}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => selectConfig(config)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                          Modifier
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedConfig(config);
+                            handleSetDefault(config);
+                          }}
+                          className={`px-3 py-2 rounded-lg text-sm ${
+                            config.is_default
+                              ? 'bg-yellow-100 text-yellow-700 cursor-default'
+                              : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                          }`}
+                          disabled={config.is_default}
+                          title={config.is_default ? 'Déjà par défaut' : 'Définir par défaut'}
+                        >
+                          <Star className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Supprimer "${config.tenant_name || 'cette application'}" ?`)) {
+                              setSelectedConfig(config);
+                              handleDelete();
+                            }
+                          }}
+                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => { setSelectedConfig(null); setIsNew(false); }}
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la liste
+              </button>
+
+              <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Nom de l'entreprise <span className="text-red-500">*</span>
@@ -260,7 +375,7 @@ export default function Settings({ onBack }: Props) {
                   type={showSecret ? 'text' : 'password'}
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
-                  placeholder={config?.is_active ? "Entrez un nouveau secret pour mettre à jour" : "Votre client secret"}
+                  placeholder={selectedConfig?.is_active ? "Entrez un nouveau secret pour mettre à jour" : "Votre client secret"}
                   className="w-full px-4 py-2 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <button
@@ -301,7 +416,7 @@ export default function Settings({ onBack }: Props) {
               className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
               title={!testPassed ? 'Vous devez passer le test de connexion avant d\'enregistrer' : ''}
             >
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
+              {saving ? 'Enregistrement...' : isNew ? 'Créer' : 'Mettre à jour'}
             </button>
             <button
               onClick={handleTest}
@@ -313,18 +428,32 @@ export default function Settings({ onBack }: Props) {
               {testing ? 'Test...' : testPassed ? 'Test réussi' : 'Tester la connexion'}
               {testPassed && <CheckCircle className="h-4 w-4" />}
             </button>
-            {config?.is_active && (
-              <button
-                onClick={handleDelete}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ml-auto flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Supprimer
-              </button>
+            {selectedConfig?.id && (
+              <div className="flex gap-2 ml-auto">
+                {!selectedConfig.is_default && (
+                  <button
+                    onClick={() => handleSetDefault(selectedConfig)}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+                  >
+                    <Star className="h-4 w-4" />
+                    Par défaut
+                  </button>
+                )}
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </button>
+              </div>
             )}
           </div>
+          </>
+          )}
         </div>
 
+        {configs.length > 0 && !selectedConfig && !isNew && (
         <div className="bg-blue-50 rounded-lg p-6">
           <h3 className="font-semibold text-blue-900 mb-3">Permissions Azure requises</h3>
           <ul className="text-sm text-blue-800 space-y-1">
@@ -337,6 +466,7 @@ export default function Settings({ onBack }: Props) {
             Azure Portal → Inscriptions d'applications → Votre App → Permissions API
           </p>
         </div>
+        )}
       </main>
     </div>
   )

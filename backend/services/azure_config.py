@@ -41,26 +41,19 @@ class AzureConfigService:
         ]
 
     def save_config(self, tenant_id: str, client_id: str, client_secret: str, tenant_name: str = None, is_default: bool = False) -> dict:
-        existing = self.db.query(AzureConfig).filter(AzureConfig.is_active).first()
+        if is_default:
+            self.db.query(AzureConfig).filter(AzureConfig.is_active).update({"is_default": False})
         
-        if existing:
-            existing.tenant_id_encrypted = encrypt_value(tenant_id)
-            existing.client_id_encrypted = encrypt_value(client_id)
-            existing.client_secret_hash = hash_password(client_secret)
-            if tenant_name is not None:
-                existing.tenant_name = tenant_name
-            if is_default:
-                self.db.query(AzureConfig).filter(AzureConfig.id != existing.id).update({"is_default": False})
-        else:
-            new_config = AzureConfig(
-                tenant_id_encrypted=encrypt_value(tenant_id),
-                client_id_encrypted=encrypt_value(client_id),
-                client_secret_hash=hash_password(client_secret),
-                tenant_name=tenant_name,
-                is_default=is_default,
-                is_active=True
-            )
-            self.db.add(new_config)
+        new_config = AzureConfig(
+            tenant_id_encrypted=encrypt_value(tenant_id),
+            client_id_encrypted=encrypt_value(client_id),
+            client_secret_encrypted=encrypt_value(client_secret),
+            client_secret_hash=hash_password(client_secret),
+            tenant_name=tenant_name,
+            is_default=is_default,
+            is_active=True
+        )
+        self.db.add(new_config)
         
         self.db.commit()
         return {"status": "success", "message": "Configuration saved securely"}
