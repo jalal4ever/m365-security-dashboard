@@ -8,8 +8,9 @@ Dashboard de supervision de la sécurité Microsoft 365.
 
 - **Secure Score** - Suivi du score de sécurité Microsoft
 - **Administrateurs** - Surveillance des rôles d'administration
-- **Licences** - Utilisation des licences Microsoft 365
-- **MFA** - Audit de l'authentification multifacteur
+- **Licences** - Vue détaillée de l'utilisation des licences Business Premium
+- **MFA** - Audit MFA basé sur `authenticationMethods/userRegistrationDetails` + liste des comptes sans méthode
+- **Appareils** - Visibilité par OS/version et état de conformité Intune (doughnut, jauges et liste)
 - **Configuration Azure** - Interface web pour configurer les credentials Azure
 
 ## Prérequis
@@ -17,6 +18,9 @@ Dashboard de supervision de la sécurité Microsoft 365.
 - Docker
 - Docker Compose
 - Azure App Registration avec permissions Microsoft Graph
+- Permissions additionnelles pour MFA et rapports:
+  - `AuditLog.Read.All` (requise pour `reports/authenticationMethods/userRegistrationDetails`)
+  - `Reports.Read.All`
 
 ## Configuration Azure AD (Option 1 - Fichier .env)
 
@@ -26,6 +30,8 @@ Dashboard de supervision de la sécurité Microsoft 365.
    - `Directory.Read.All`
    - `User.Read.All`
    - `Organization.Read.All`
+   - `AuditLog.Read.All` (pour les rapports d'inscription MFA)
+   - `Reports.Read.All`
 3. Générer un Client Secret
 4. Copier `.env.example` vers `.env` et configurer les variables
 
@@ -60,6 +66,12 @@ docker-compose -f docker/docker-compose.yml up -d
 | Backend API | 8000 | http://localhost:8000 |
 | API Docs | 8000 | http://localhost:8000/docs |
 | PostgreSQL | 5432 | localhost:5432 |
+
+## MFA Coverage
+
+- **Source**: `reports/authenticationMethods/userRegistrationDetails` (permet de détecter _isMfaCapable_ / _isMfaRegistered_ sans dépendre uniquement des méthodes enregistrées).
+- **Filtrage**: seuls les `userType=Member` avec un UPN `@entis.onmicrosoft.com` sont pris en compte (exclusion des invités, contacts, `#EXT#`, comptes services).
+- **Objectif**: cette couche présente un inventaire fiable des comptes capables de faire MFA et met en avant les comptes non conformes via le widget MFA.
 
 ## CI/CD GitHub Actions
 

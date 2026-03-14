@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import SecureScoreWidget from './components/SecureScoreWidget'
 import LicenseWidget from './components/LicenseWidget'
 import MfaWidget from './components/MfaWidget'
+import DeviceOsWidget from './components/DeviceOsWidget'
+import DeviceComplianceWidget from './components/DeviceComplianceWidget'
 import Settings from './pages/Settings'
-import { Shield, Key, Lock, Settings as SettingsIcon, Building2, ChevronDown } from 'lucide-react'
+import { Shield, Key, Lock, Settings as SettingsIcon, Building2, ChevronDown, CheckCircle } from 'lucide-react'
 
 interface AzureConfig {
   id?: number
@@ -51,21 +53,68 @@ interface LicenseData {
 
 interface MfaData {
   total_users?: number
-  mfa_enabled_count?: number
-  mfa_disabled_count?: number
-  mfa_percentage?: number
-  users_with_mfa?: Array<{
-    user_id: string
-    user_principal_name: string
-    display_name: string
-    mfa_enabled: boolean
-    auth_methods?: string[]
+  mfa_capable?: number
+  capable_percentage?: number
+  registered_percentage?: number
+  capable_sample?: Array<{
+    userPrincipalName: string
+    displayName: string
+    isMfaCapable: boolean
+    methodsRegistered: string[]
   }>
-  users_without_mfa?: Array<{
-    user_id: string
-    user_principal_name: string
-    display_name: string
-    mfa_enabled: boolean
+  registered_sample?: Array<{
+    userPrincipalName: string
+    displayName: string
+    isMfaRegistered: boolean
+    methodsRegistered: string[]
+  }>
+  not_capable_sample?: Array<{
+    userPrincipalName: string
+    displayName: string
+    missing: string
+  }>
+  signins_mfa?: number
+  signins_sample?: Array<{
+    userPrincipalName: string
+    createdDateTime: string
+    mfaDetail: Record<string, unknown>
+  }>
+}
+
+interface DevicesOsData {
+  devices?: Array<{
+    os: string
+    total: number
+    versions: Array<{
+      version: string
+      count: number
+    }>
+  }>
+  total?: number
+}
+
+interface ComplianceData {
+  summary?: {
+    total: number
+    compliant: number
+    non_compliant: number
+    unknown: number
+    compliant_percentage: number
+    non_compliant_percentage: number
+  }
+  by_os?: Array<{
+    os: string
+    total: number
+    compliant: number
+    non_compliant: number
+    compliant_percentage: number
+    versions: Array<{
+      version: string
+      total: number
+      compliant: number
+      non_compliant: number
+      compliant_percentage: number
+    }>
   }>
 }
 
@@ -74,6 +123,8 @@ interface DashboardData {
   admins: AdminData
   licenses: LicenseData
   mfa: MfaData
+  devicesOs?: DevicesOsData
+  compliance?: ComplianceData
 }
 
 function App() {
@@ -109,21 +160,25 @@ function App() {
 
     const fetchData = async () => {
       try {
-        const [securityRes, adminsRes, licensesRes, mfaRes] = await Promise.all([
+        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
           fetch(`${apiUrl}/api/security/score`),
           fetch(`${apiUrl}/api/admins`),
           fetch(`${apiUrl}/api/licenses`),
-          fetch(`${apiUrl}/api/mfa`)
+          fetch(`${apiUrl}/api/mfa`),
+          fetch(`${apiUrl}/api/devices-os`),
+          fetch(`${apiUrl}/api/devices-compliance`)
         ])
 
-        const [security, admins, licenses, mfa] = await Promise.all([
+        const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
           securityRes.json(),
           adminsRes.json(),
           licensesRes.json(),
-          mfaRes.json()
+          mfaRes.json(),
+          devicesOsRes.json(),
+          complianceRes.json()
         ])
 
-        setData({ security, admins, licenses, mfa })
+        setData({ security, admins, licenses, mfa, devicesOs, compliance })
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data')
       } finally {
@@ -156,21 +211,25 @@ function App() {
     }
     
     try {
-      const [securityRes, adminsRes, licensesRes, mfaRes] = await Promise.all([
+      const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
         fetch(`${apiUrl}/api/security/score`),
         fetch(`${apiUrl}/api/admins`),
         fetch(`${apiUrl}/api/licenses`),
-        fetch(`${apiUrl}/api/mfa`)
+        fetch(`${apiUrl}/api/mfa`),
+        fetch(`${apiUrl}/api/devices-os`),
+        fetch(`${apiUrl}/api/devices-compliance`)
       ])
 
-      const [security, admins, licenses, mfa] = await Promise.all([
+      const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
         securityRes.json(),
         adminsRes.json(),
         licensesRes.json(),
-        mfaRes.json()
+        mfaRes.json(),
+        devicesOsRes.json(),
+        complianceRes.json()
       ])
 
-      setData({ security, admins, licenses, mfa })
+      setData({ security, admins, licenses, mfa, devicesOs, compliance })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
     } finally {
@@ -274,7 +333,7 @@ function App() {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-slate-900">Vue d'ensemble</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="p-3 bg-blue-100 rounded-xl">
                 <Shield className="h-6 w-6 text-blue-600" />
@@ -291,31 +350,45 @@ function App() {
               <div className="p-3 bg-green-100 rounded-xl">
                 <Key className="h-6 w-6 text-green-600" />
               </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Licences</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {data?.licenses?.summary?.total_consumed || 0} <span className="text-slate-400 font-normal text-lg">/ {data?.licenses?.summary?.total_licenses || 0}</span>
-              </p>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Licences</p>
+                <p className="text-3xl font-bold text-slate-900">
+                  {data?.licenses?.summary?.total_consumed || 0} <span className="text-slate-400 font-normal text-lg">/ {data?.licenses?.summary?.total_licenses || 0}</span>
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <Lock className="h-6 w-6 text-orange-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <Lock className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">MFA Coverage</p>
+                <p className="text-3xl font-bold text-slate-900">
+                  {data?.mfa?.capable_percentage?.toFixed(1) || '0.0'}%
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">MFA Coverage</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {data?.mfa?.mfa_percentage || 0}%
-              </p>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className={`p-3 rounded-xl ${(data?.compliance?.summary?.compliant_percentage || 0) >= 80 ? 'bg-green-100' : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 ? 'bg-amber-100' : 'bg-red-100'}`}>
+                <CheckCircle className={`h-6 w-6 ${(data?.compliance?.summary?.compliant_percentage || 0) >= 80 ? 'text-green-600' : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 ? 'text-amber-600' : 'text-red-600'}`} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Conformité</p>
+                <p className="text-3xl font-bold text-slate-900">
+                  {data?.compliance?.summary?.compliant_percentage?.toFixed(1) || '0'}%
+                </p>
+              </div>
             </div>
-          </div>
         </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SecureScoreWidget data={data?.security} />
             <LicenseWidget data={data?.licenses} />
             <MfaWidget data={data?.mfa} />
+            <DeviceOsWidget data={data?.devicesOs} />
+            <DeviceComplianceWidget data={data?.compliance} />
           </div>
         </main>
     </div>
