@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft, Github } from 'lucide-react'
-import GitHubIntegration from './GitHubIntegration'
+import { Settings as SettingsIcon, Shield, Eye, EyeOff, CheckCircle, XCircle, Trash2, ArrowLeft, ArrowRight, Star, StarOff } from 'lucide-react'
 
 interface AzureConfig {
   tenant_id: string
   client_id: string
+  tenant_name: string | null
+  is_default: boolean
   is_active: boolean
   created_at: string | null
   updated_at: string | null
@@ -15,18 +16,20 @@ interface Props {
 }
 
 export default function Settings({ onBack }: Props) {
-  const [activeTab, setActiveTab] = useState<'azure' | 'github'>('azure')
   const [config, setConfig] = useState<AzureConfig | null>(null)
   const [tenantId, setTenantId] = useState('')
   const [clientId, setClientId] = useState('')
   const [clientSecret, setClientSecret] = useState('')
+  const [tenantName, setTenantName] = useState('')
+  const [isDefault, setIsDefault] = useState(false)
   const [showSecret, setShowSecret] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [testPassed, setTestPassed] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiUrl = import.meta.env.VITE_API_URL || ''
 
   useEffect(() => {
     fetch(`${apiUrl}/api/azure/config`)
@@ -36,6 +39,8 @@ export default function Settings({ onBack }: Props) {
           setConfig(data)
           setTenantId(data.tenant_id)
           setClientId(data.client_id)
+          setTenantName(data.tenant_name || '')
+          setIsDefault(data.is_default || false)
         }
       })
       .finally(() => setLoading(false))
@@ -43,7 +48,12 @@ export default function Settings({ onBack }: Props) {
 
   const handleSave = async () => {
     if (!tenantId || !clientId || !clientSecret) {
-      setMessage({ type: 'error', text: 'All fields are required' })
+      setMessage({ type: 'error', text: 'Tenant ID, Client ID et Client Secret sont requis' })
+      return
+    }
+
+    if (!testPassed) {
+      setMessage({ type: 'error', text: 'Vous devez passer le test de connexion avant d\'enregistrer' })
       return
     }
 
@@ -57,20 +67,28 @@ export default function Settings({ onBack }: Props) {
         body: JSON.stringify({
           tenant_id: tenantId,
           client_id: clientId,
-          client_secret: clientSecret
+          client_secret: clientSecret,
+          tenant_name: tenantName || `Tenant ${Date.now()}`,
+          is_default: isDefault
         })
       })
       const data = await res.json()
 
       if (data.status === 'success') {
-        setMessage({ type: 'success', text: 'Configuration saved securely' })
+        setMessage({ type: 'success', text: 'Configuration enregistrée avec succès' })
         setClientSecret('')
-        setConfig(prev => prev ? { ...prev, tenant_id: tenantId, client_id: clientId } : null)
+        setConfig(prev => prev ? { 
+          ...prev, 
+          tenant_id: tenantId, 
+          client_id: clientId,
+          tenant_name: tenantName,
+          is_default: isDefault
+        } : null)
       } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to save' })
+        setMessage({ type: 'error', text: data.message || 'Échec de l\'enregistrement' })
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to connect to API' })
+      setMessage({ type: 'error', text: 'Échec de la connexion à l\'API' })
     } finally {
       setSaving(false)
     }
@@ -78,12 +96,13 @@ export default function Settings({ onBack }: Props) {
 
   const handleTest = async () => {
     if (!tenantId || !clientId || !clientSecret) {
-      setMessage({ type: 'error', text: 'All fields are required to test' })
+      setMessage({ type: 'error', text: 'Tous les champs sont requis pour tester' })
       return
     }
 
     setTesting(true)
     setMessage(null)
+    setTestPassed(false)
 
     try {
       const res = await fetch(`${apiUrl}/api/azure/test`, {
@@ -98,19 +117,22 @@ export default function Settings({ onBack }: Props) {
       const data = await res.json()
 
       if (data.status === 'success') {
-        setMessage({ type: 'success', text: 'Azure connection successful!' })
+        setMessage({ type: 'success', text: 'Connexion Azure réussie !' })
+        setTestPassed(true)
       } else {
-        setMessage({ type: 'error', text: data.message || 'Connection failed' })
+        setMessage({ type: 'error', text: data.message || 'Échec de la connexion' })
+        setTestPassed(false)
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to test connection' })
+      setMessage({ type: 'error', text: 'Échec du test de connexion' })
+      setTestPassed(false)
     } finally {
       setTesting(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete the Azure configuration?')) return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer la configuration Azure ?')) return
 
     try {
       const res = await fetch(`${apiUrl}/api/azure/config`, { method: 'DELETE' })
@@ -119,15 +141,17 @@ export default function Settings({ onBack }: Props) {
         setTenantId('')
         setClientId('')
         setClientSecret('')
-        setMessage({ type: 'success', text: 'Configuration deleted' })
+        setTenantName('')
+        setIsDefault(false)
+        setMessage({ type: 'success', text: 'Configuration supprimée' })
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to delete configuration' })
+      setMessage({ type: 'error', text: 'Échec de la suppression' })
     }
   }
 
-  if (activeTab === 'github') {
-    return <GitHubIntegration onBack={() => setActiveTab('azure')} />
+  const handleGoToDashboard = () => {
+    onBack()
   }
 
   if (loading) {
@@ -142,38 +166,22 @@ export default function Settings({ onBack }: Props) {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg">
-              <ArrowLeft className="h-5 w-5 text-slate-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg">
+                <ArrowLeft className="h-5 w-5 text-slate-600" />
+              </button>
+              <SettingsIcon className="h-8 w-8 text-primary-600" />
+              <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
+            </div>
+            <button
+              onClick={handleGoToDashboard}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              Dashboard
+              <ArrowRight className="h-4 w-4" />
             </button>
-            <SettingsIcon className="h-8 w-8 text-primary-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
           </div>
-        </div>
-        
-        <div className="flex gap-4 px-4 sm:px-6">
-          <button
-            onClick={() => setActiveTab('azure')}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'azure'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Shield className="h-4 w-4 inline mr-2" />
-            Azure
-          </button>
-          <button
-            onClick={() => setActiveTab('github')}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'github'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Github className="h-4 w-4 inline mr-2" />
-            GitHub
-          </button>
         </div>
       </header>
 
@@ -181,17 +189,17 @@ export default function Settings({ onBack }: Props) {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <Shield className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-slate-900">Microsoft Azure App Registration</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Configuration Microsoft Azure</h2>
             {config?.is_active && (
               <span className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" /> Connected
+                <CheckCircle className="h-4 w-4" /> Connecté
               </span>
             )}
           </div>
 
           <p className="text-slate-600 mb-6 text-sm">
-            Enter your Azure App Registration credentials to enable the dashboard.
-            Your credentials are encrypted before storage.
+            Entrez les identifiants de votre application Azure App Registration pour activer le dashboard.
+            Vos identifiants sont chiffrés avant stockage.
           </p>
 
           {message && (
@@ -206,7 +214,20 @@ export default function Settings({ onBack }: Props) {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Tenant ID
+                Nom de l'entreprise <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                placeholder="Nom de votre entreprise"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Tenant ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -219,7 +240,7 @@ export default function Settings({ onBack }: Props) {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Client ID (Application ID)
+                Client ID (Application ID) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -232,14 +253,14 @@ export default function Settings({ onBack }: Props) {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Client Secret
+                Client Secret <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type={showSecret ? 'text' : 'password'}
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
-                  placeholder={config?.is_active ? "Enter new secret to update" : "Your client secret"}
+                  placeholder={config?.is_active ? "Entrez un nouveau secret pour mettre à jour" : "Votre client secret"}
                   className="w-full px-4 py-2 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <button
@@ -251,22 +272,46 @@ export default function Settings({ onBack }: Props) {
                 </button>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isDefault"
+                checked={isDefault}
+                onChange={(e) => setIsDefault(e.target.checked)}
+                className="w-4 h-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="isDefault" className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                <Star className="h-4 w-4 text-yellow-500" />
+                Définir par défaut
+              </label>
+            </div>
+
+            {!testPassed && tenantId && clientId && clientSecret && (
+              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                Veuillez tester la connexion avant d'enregistrer. Le test est obligatoire.
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 mt-6">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !testPassed}
               className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              title={!testPassed ? 'Vous devez passer le test de connexion avant d\'enregistrer' : ''}
             >
-              {saving ? 'Saving...' : 'Save Configuration'}
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
             </button>
             <button
               onClick={handleTest}
               disabled={testing || !tenantId || !clientId || !clientSecret}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className={`px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 ${
+                testPassed ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600'
+              }`}
             >
-              {testing ? 'Testing...' : 'Test Connection'}
+              {testing ? 'Test...' : testPassed ? 'Test réussi' : 'Tester la connexion'}
+              {testPassed && <CheckCircle className="h-4 w-4" />}
             </button>
             {config?.is_active && (
               <button
@@ -274,22 +319,22 @@ export default function Settings({ onBack }: Props) {
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ml-auto flex items-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete
+                Supprimer
               </button>
             )}
           </div>
         </div>
 
         <div className="bg-blue-50 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-900 mb-3">Required Azure Permissions</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">Permissions Azure requises</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• SecurityEvents.Read.All - View secure score</li>
-            <li>• Directory.Read.All - View admin roles</li>
-            <li>• User.Read.All - View users and MFA status</li>
-            <li>• Organization.Read.All - Organization info</li>
+            <li>• SecurityEvents.Read.All - Voir le secure score</li>
+            <li>• Directory.Read.All - Voir les rôles admin</li>
+            <li>• User.Read.All - Voir les utilisateurs et MFA</li>
+            <li>• Organization.Read.All - Info organisation</li>
           </ul>
           <p className="text-sm text-blue-700 mt-3">
-            Go to Azure Portal → App Registrations → Your App → API Permissions
+            Azure Portal → Inscriptions d'applications → Votre App → Permissions API
           </p>
         </div>
       </main>

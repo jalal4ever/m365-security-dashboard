@@ -37,7 +37,8 @@ def decrypt_value(encrypted: str) -> str:
 
 
 def hash_password(password: str) -> str:
-    return PWD_CONTEXT.hash(password)
+    truncated = password[:72] if len(password) > 72 else password
+    return PWD_CONTEXT.hash(truncated)
 
 
 def verify_password(plaintext: str, hashed: str) -> bool:

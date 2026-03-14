@@ -11,6 +11,8 @@ class AzureConfig(Base):
     tenant_id_encrypted: Mapped[str] = mapped_column(String)
     client_id_encrypted: Mapped[str] = mapped_column(String)
     client_secret_hash: Mapped[str] = mapped_column(String)
+    tenant_name: Mapped[str] = mapped_column(String, nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

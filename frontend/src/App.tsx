@@ -72,10 +72,25 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'settings'>('dashboard')
+  const [companyName, setCompanyName] = useState<string>('M365 Security Dashboard')
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiUrl = (import.meta.env.VITE_API_URL?.includes('localhost') || import.meta.env.VITE_API_URL === '') 
+    ? '' 
+    : import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
   useEffect(() => {
+    const fetchCompanyName = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/azure/config`)
+        const config = await res.json()
+        if (config && config.tenant_name) {
+          setCompanyName(config.tenant_name)
+        }
+      } catch {
+        // Use default name
+      }
+    }
+
     const fetchData = async () => {
       try {
         const [securityRes, adminsRes, licensesRes, mfaRes] = await Promise.all([
@@ -100,6 +115,7 @@ function App() {
       }
     }
 
+    fetchCompanyName()
     fetchData()
     const interval = setInterval(fetchData, 300000)
     return () => clearInterval(interval)
@@ -141,7 +157,7 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8 text-primary-600" />
-              <h1 className="text-2xl font-bold text-slate-900">M365 Security Dashboard</h1>
+              <h1 className="text-2xl font-bold text-slate-900">{companyName}</h1>
             </div>
             <button
               onClick={() => setCurrentPage('settings')}

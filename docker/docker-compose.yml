@@ -20,7 +20,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile
     container_name: m365-backend
     ports:
@@ -41,13 +41,13 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile
     container_name: m365-frontend
     ports:
-      - "5173:5173"
+      - "5170:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=
     depends_on:
       - backend
     networks:
