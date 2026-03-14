@@ -4,6 +4,7 @@ import LicenseWidget from './components/LicenseWidget'
 import MfaWidget from './components/MfaWidget'
 import DeviceOsWidget from './components/DeviceOsWidget'
 import DeviceComplianceWidget from './components/DeviceComplianceWidget'
+import RiskyUsersWidget from './components/RiskyUsersWidget'
 import Settings from './pages/Settings'
 import { Shield, Key, Lock, Settings as SettingsIcon, Building2, ChevronDown, CheckCircle } from 'lucide-react'
 
@@ -81,6 +82,23 @@ interface MfaData {
   }>
 }
 
+interface RiskyUsersData {
+  total_risky_users?: number
+  risk_levels?: {
+    high?: number
+    medium?: number
+    low?: number
+  }
+  users?: Array<{
+    user_principal_name: string
+    risk_level: string
+    risk_state: string
+    risk_last_updated_date_time: string
+    is_processing?: boolean
+  }>
+  error?: string
+}
+
 interface DevicesOsData {
   devices?: Array<{
     os: string
@@ -123,6 +141,7 @@ interface DashboardData {
   admins: AdminData
   licenses: LicenseData
   mfa: MfaData
+  risky?: RiskyUsersData
   devicesOs?: DevicesOsData
   compliance?: ComplianceData
 }
@@ -160,25 +179,27 @@ function App() {
 
     const fetchData = async () => {
       try {
-        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
+        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes, riskyRes] = await Promise.all([
           fetch(`${apiUrl}/api/security/score`),
           fetch(`${apiUrl}/api/admins`),
           fetch(`${apiUrl}/api/licenses`),
           fetch(`${apiUrl}/api/mfa`),
           fetch(`${apiUrl}/api/devices-os`),
-          fetch(`${apiUrl}/api/devices-compliance`)
+          fetch(`${apiUrl}/api/devices-compliance`),
+          fetch(`${apiUrl}/api/security/risky-users`)
         ])
 
-        const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
+        const [security, admins, licenses, mfa, devicesOs, compliance, risky] = await Promise.all([
           securityRes.json(),
           adminsRes.json(),
           licensesRes.json(),
           mfaRes.json(),
           devicesOsRes.json(),
-          complianceRes.json()
+          complianceRes.json(),
+          riskyRes.json()
         ])
 
-        setData({ security, admins, licenses, mfa, devicesOs, compliance })
+        setData({ security, admins, licenses, mfa, devicesOs, compliance, risky })
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data')
       } finally {
@@ -211,25 +232,27 @@ function App() {
     }
     
     try {
-      const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
-        fetch(`${apiUrl}/api/security/score`),
-        fetch(`${apiUrl}/api/admins`),
-        fetch(`${apiUrl}/api/licenses`),
-        fetch(`${apiUrl}/api/mfa`),
-        fetch(`${apiUrl}/api/devices-os`),
-        fetch(`${apiUrl}/api/devices-compliance`)
-      ])
+        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes, riskyRes] = await Promise.all([
+          fetch(`${apiUrl}/api/security/score`),
+          fetch(`${apiUrl}/api/admins`),
+          fetch(`${apiUrl}/api/licenses`),
+          fetch(`${apiUrl}/api/mfa`),
+          fetch(`${apiUrl}/api/devices-os`),
+          fetch(`${apiUrl}/api/devices-compliance`),
+          fetch(`${apiUrl}/api/security/risky-users`)
+        ])
 
-      const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
-        securityRes.json(),
-        adminsRes.json(),
-        licensesRes.json(),
-        mfaRes.json(),
-        devicesOsRes.json(),
-        complianceRes.json()
-      ])
+        const [security, admins, licenses, mfa, devicesOs, compliance, risky] = await Promise.all([
+          securityRes.json(),
+          adminsRes.json(),
+          licensesRes.json(),
+          mfaRes.json(),
+          devicesOsRes.json(),
+          complianceRes.json(),
+          riskyRes.json()
+        ])
 
-      setData({ security, admins, licenses, mfa, devicesOs, compliance })
+        setData({ security, admins, licenses, mfa, devicesOs, compliance, risky })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
     } finally {
@@ -389,6 +412,7 @@ function App() {
             <MfaWidget data={data?.mfa} />
             <DeviceOsWidget data={data?.devicesOs} />
             <DeviceComplianceWidget data={data?.compliance} />
+            <RiskyUsersWidget data={data?.risky} />
           </div>
         </main>
     </div>

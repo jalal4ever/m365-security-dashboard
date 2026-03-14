@@ -10,6 +10,7 @@ Dashboard de supervision de la sécurité Microsoft 365.
 - **Administrateurs** - Surveillance des rôles d'administration
 - **Licences** - Vue détaillée de l'utilisation des licences Business Premium
 - **MFA** - Audit MFA basé sur `authenticationMethods/userRegistrationDetails` + liste des comptes sans méthode
+- **Utilisateurs à risque** - Identification des comptes surveillés par Identity Protection (high/medium/low)
 - **Appareils** - Visibilité par OS/version et état de conformité Intune (doughnut, jauges et liste)
 - **Configuration Azure** - Interface web pour configurer les credentials Azure
 
