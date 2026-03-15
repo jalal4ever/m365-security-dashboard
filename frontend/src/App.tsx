@@ -130,15 +130,6 @@ interface DashboardData {
   devicesOs?: DevicesOsData
   compliance?: ComplianceData
 }
-  users?: Array<{
-    user_principal_name: string
-    risk_level: string
-    risk_state: string
-    risk_last_updated_date_time: string
-    is_processing?: boolean
-  }>
-  error?: string
-}
 
 interface DevicesOsData {
   devices?: Array<{
@@ -175,16 +166,6 @@ interface ComplianceData {
       compliant_percentage: number
     }>
   }>
-}
-
-interface DashboardData {
-  security: SecurityData
-  admins: AdminData
-  licenses: LicenseData
-  mfa: MfaData
-  risky?: RiskyUsersData
-  devicesOs?: DevicesOsData
-  compliance?: ComplianceData
 }
 
 function App() {
