@@ -120,17 +120,6 @@ interface UserSecurityAlertsData {
   error?: string
 }
 
-interface DashboardData {
-  security: SecurityData
-  admins: AdminData
-  licenses: LicenseData
-  mfa: MfaData
-  risky?: RiskyUsersData
-  userAlerts?: UserSecurityAlertsData
-  devicesOs?: DevicesOsData
-  compliance?: ComplianceData
-}
-
 interface DevicesOsData {
   devices?: Array<{
     os: string
@@ -166,6 +155,17 @@ interface ComplianceData {
       compliant_percentage: number
     }>
   }>
+}
+
+interface DashboardData {
+  security: SecurityData
+  admins: AdminData
+  licenses: LicenseData
+  mfa: MfaData
+  risky?: RiskyUsersData
+  userAlerts?: UserSecurityAlertsData
+  devicesOs?: DevicesOsData
+  compliance?: ComplianceData
 }
 
 function App() {
@@ -441,7 +441,7 @@ function App() {
             <UserSecurityAlertsWidget data={data?.userAlerts} />
             <RiskyUsersWidget data={data?.risky} />
           </div>
-        </main>
+      </main>
     </div>
   )
 }
