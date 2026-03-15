@@ -195,31 +195,53 @@ export default function Settings({ onBack }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-secondary-50">
+      <header className="bg-white shadow-sm border-b border-secondary-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg">
-                <LayoutDashboard className="h-5 w-5 text-slate-600" />
-              </button>
-              <SettingsIcon className="h-8 w-8 text-primary-600" />
-              <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-900 rounded-xl">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-primary-900">Security Dashboard</h1>
+                  <p className="text-xs text-primary-600 -mt-0.5">Microsoft 365</p>
+                </div>
+              </div>
+              
+              <nav className="hidden md:flex items-center gap-1 ml-8">
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-primary-700 hover:bg-accent-100"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Tableau de bord
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-primary-900 text-white"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  Paramètres
+                </button>
+              </nav>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-secondary-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <h2 className="text-xl font-semibold text-slate-900">Applications Azure</h2>
+              <div className="p-2 bg-secondary-100 rounded-lg">
+                <Shield className="h-5 w-5 text-primary-700" />
+              </div>
+              <h2 className="text-xl font-semibold text-primary-900">Applications Azure</h2>
             </div>
             <button
               onClick={handleNew}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-900 text-white rounded-lg hover:bg-primary-800 transition-all duration-200"
             >
               <Plus className="h-4 w-4" />
               Nouvelle application
@@ -228,7 +250,7 @@ export default function Settings({ onBack }: Props) {
 
           {message && (
             <div className={`p-4 rounded-lg mb-6 flex items-center gap-2 ${
-              message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              message.type === 'success' ? 'bg-success-light text-success border border-success' : 'bg-danger-light text-danger border border-danger'
             }`}>
               {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
               {message.text}
@@ -278,7 +300,7 @@ export default function Settings({ onBack }: Props) {
                       <div className="flex gap-2">
                         <button
                           onClick={() => selectConfig(config)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-accent-100 text-sm"
                         >
                           <Edit2 className="h-4 w-4" />
                           Modifier
@@ -291,7 +313,7 @@ export default function Settings({ onBack }: Props) {
                           className={`px-3 py-2 rounded-lg text-sm ${
                             config.is_default
                               ? 'bg-yellow-100 text-yellow-700 cursor-default'
-                              : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                              : 'bg-yellow-50 text-yellow-700 hover:bg-alert-yellowLight'
                           }`}
                           disabled={config.is_default}
                           title={config.is_default ? 'Déjà par défaut' : 'Définir par défaut'}
@@ -305,7 +327,7 @@ export default function Settings({ onBack }: Props) {
                               handleDelete();
                             }
                           }}
-                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                          className="px-3 py-2 bg-alert-redLight text-alert-red rounded-lg hover:bg-alert-red hover:text-white"
                           title="Supprimer"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -320,7 +342,7 @@ export default function Settings({ onBack }: Props) {
             <>
               <button
                 onClick={() => { setSelectedConfig(null); setIsNew(false); }}
-                className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4"
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4 transition-colors duration-200"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Retour à la liste
@@ -336,7 +358,7 @@ export default function Settings({ onBack }: Props) {
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
                 placeholder="Nom de votre entreprise"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-slate-50/50 hover:bg-white transition-all duration-200"
               />
             </div>
 
@@ -349,7 +371,7 @@ export default function Settings({ onBack }: Props) {
                 value={tenantId}
                 onChange={(e) => setTenantId(e.target.value)}
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -362,7 +384,7 @@ export default function Settings({ onBack }: Props) {
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -376,7 +398,7 @@ export default function Settings({ onBack }: Props) {
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
                   placeholder={selectedConfig?.is_active ? "Entrez un nouveau secret pour mettre à jour" : "Votre client secret"}
-                  className="w-full px-4 py-2 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <button
                   type="button"
@@ -394,7 +416,7 @@ export default function Settings({ onBack }: Props) {
                 id="isDefault"
                 checked={isDefault}
                 onChange={(e) => setIsDefault(e.target.checked)}
-                className="w-4 h-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-primary-600 border-slate-200 rounded focus:ring-primary-500"
               />
               <label htmlFor="isDefault" className="text-sm font-medium text-slate-700 flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500" />
@@ -413,7 +435,7 @@ export default function Settings({ onBack }: Props) {
             <button
               onClick={handleSave}
               disabled={saving || !testPassed}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-all duration-200 font-medium"
               title={!testPassed ? 'Vous devez passer le test de connexion avant d\'enregistrer' : ''}
             >
               {saving ? 'Enregistrement...' : isNew ? 'Créer' : 'Mettre à jour'}
@@ -421,8 +443,10 @@ export default function Settings({ onBack }: Props) {
             <button
               onClick={handleTest}
               disabled={testing || !tenantId || !clientId || !clientSecret}
-              className={`px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 ${
-                testPassed ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600'
+              className={`px-6 py-2.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all duration-200 ${
+                testPassed 
+                  ? 'bg-primary-700 text-white hover:bg-primary-800' 
+                  : 'bg-primary-600 text-white hover:bg-primary-700'
               }`}
             >
               {testing ? 'Test...' : testPassed ? 'Test réussi' : 'Tester la connexion'}
@@ -433,7 +457,7 @@ export default function Settings({ onBack }: Props) {
                 {!selectedConfig.is_default && (
                   <button
                     onClick={() => handleSetDefault(selectedConfig)}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+                    className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 flex items-center gap-2 transition-all duration-200"
                   >
                     <Star className="h-4 w-4" />
                     Par défaut
@@ -441,7 +465,7 @@ export default function Settings({ onBack }: Props) {
                 )}
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-alert-red text-white rounded-lg hover:bg-alert-red flex items-center gap-2 transition-all duration-200 opacity-90 hover:opacity-100"
                 >
                   <Trash2 className="h-4 w-4" />
                   Supprimer

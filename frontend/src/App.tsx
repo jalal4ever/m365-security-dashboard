@@ -4,10 +4,9 @@ import LicenseWidget from './components/LicenseWidget'
 import MfaWidget from './components/MfaWidget'
 import DeviceOsWidget from './components/DeviceOsWidget'
 import DeviceComplianceWidget from './components/DeviceComplianceWidget'
-import RiskyUsersWidget from './components/RiskyUsersWidget'
-import UserSecurityAlertsWidget from './components/UserSecurityAlertsWidget'
+import AdminRolesWidget from './components/AdminRolesWidget'
 import Settings from './pages/Settings'
-import { Shield, Key, Lock, Settings as SettingsIcon, Building2, ChevronDown, CheckCircle } from 'lucide-react'
+import { Shield, Key, Lock, Settings as SettingsIcon, Building2, ChevronDown, CheckCircle, LayoutDashboard, Users, AlertTriangle, Lock as LockIcon } from 'lucide-react'
 
 interface AzureConfig {
   id?: number
@@ -83,43 +82,6 @@ interface MfaData {
   }>
 }
 
-interface RiskyUsersData {
-  total_risky_users?: number
-  risk_levels?: {
-    high?: number
-    medium?: number
-    low?: number
-  }
-  users?: Array<{
-    user_principal_name: string
-    risk_level: string
-    risk_state: string
-    risk_last_updated_date_time: string
-    is_processing?: boolean
-  }>
-  error?: string
-}
-
-interface UserSecurityAlertsData {
-  total_alerts: number
-  top_users: Array<{
-    user_principal_name: string
-    score: number
-    alert_count: number
-    max_severity: string
-    recent_alerts: Array<{
-      id: string
-      title: string
-      severity: string
-      created_at: string
-      status: string
-      category: string
-      description?: string
-    }>
-  }>
-  error?: string
-}
-
 interface DevicesOsData {
   devices?: Array<{
     os: string
@@ -162,8 +124,6 @@ interface DashboardData {
   admins: AdminData
   licenses: LicenseData
   mfa: MfaData
-  risky?: RiskyUsersData
-  userAlerts?: UserSecurityAlertsData
   devicesOs?: DevicesOsData
   compliance?: ComplianceData
 }
@@ -201,29 +161,25 @@ function App() {
 
     const fetchData = async () => {
       try {
-        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes, riskyRes, userAlertsRes] = await Promise.all([
+        const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
           fetch(`${apiUrl}/api/security/score`),
           fetch(`${apiUrl}/api/admins`),
           fetch(`${apiUrl}/api/licenses`),
           fetch(`${apiUrl}/api/mfa`),
           fetch(`${apiUrl}/api/devices-os`),
-          fetch(`${apiUrl}/api/devices-compliance`),
-          fetch(`${apiUrl}/api/security/risky-users`),
-          fetch(`${apiUrl}/api/security/user-alerts`)
+          fetch(`${apiUrl}/api/devices-compliance`)
         ])
 
-        const [security, admins, licenses, mfa, devicesOs, compliance, risky, userAlerts] = await Promise.all([
+        const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
           securityRes.json(),
           adminsRes.json(),
           licensesRes.json(),
           mfaRes.json(),
           devicesOsRes.json(),
-          complianceRes.json(),
-          riskyRes.json(),
-          userAlertsRes.json()
+          complianceRes.json()
         ])
 
-        setData({ security, admins, licenses, mfa, devicesOs, compliance, risky, userAlerts })
+        setData({ security, admins, licenses, mfa, devicesOs, compliance })
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data')
       } finally {
@@ -256,29 +212,25 @@ function App() {
     }
     
     try {
-      const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes, riskyRes, userAlertsRes] = await Promise.all([
+      const [securityRes, adminsRes, licensesRes, mfaRes, devicesOsRes, complianceRes] = await Promise.all([
         fetch(`${apiUrl}/api/security/score`),
         fetch(`${apiUrl}/api/admins`),
         fetch(`${apiUrl}/api/licenses`),
         fetch(`${apiUrl}/api/mfa`),
         fetch(`${apiUrl}/api/devices-os`),
-        fetch(`${apiUrl}/api/devices-compliance`),
-        fetch(`${apiUrl}/api/security/risky-users`),
-        fetch(`${apiUrl}/api/security/user-alerts`)
+        fetch(`${apiUrl}/api/devices-compliance`)
       ])
 
-      const [security, admins, licenses, mfa, devicesOs, compliance, risky, userAlerts] = await Promise.all([
+      const [security, admins, licenses, mfa, devicesOs, compliance] = await Promise.all([
         securityRes.json(),
         adminsRes.json(),
         licensesRes.json(),
         mfaRes.json(),
         devicesOsRes.json(),
-        complianceRes.json(),
-        riskyRes.json(),
-        userAlertsRes.json()
+        complianceRes.json()
       ])
 
-      setData({ security, admins, licenses, mfa, devicesOs, compliance, risky, userAlerts })
+      setData({ security, admins, licenses, mfa, devicesOs, compliance })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
     } finally {
@@ -316,47 +268,81 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-secondary-50">
+      <header className="bg-white shadow-sm border-b border-secondary-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Shield className="h-9 w-9 text-primary-600" />
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-900 rounded-xl">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-primary-900">Security Dashboard</h1>
+                  <p className="text-xs text-primary-600 -mt-0.5">Microsoft 365</p>
+                </div>
+              </div>
+              
+              <nav className="hidden md:flex items-center gap-1 ml-8">
+                <button
+                  onClick={() => setCurrentPage('dashboard')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    currentPage === 'dashboard'
+                      ? 'bg-primary-900 text-white'
+                      : 'text-primary-700 hover:bg-accent-100'
+                  }`}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Tableau de bord
+                </button>
+                <button
+                  onClick={() => setCurrentPage('settings')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    currentPage === 'settings'
+                      ? 'bg-primary-900 text-white'
+                      : 'text-primary-700 hover:bg-accent-100'
+                  }`}
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  Paramètres
+                </button>
+              </nav>
             </div>
+            
             <div className="flex items-center gap-3">
               {configs.length > 0 && (
                 <div className="relative">
                   <button
                     onClick={() => setShowTenantMenu(!showTenantMenu)}
-                    className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 bg-secondary-50 hover:bg-accent-100 rounded-lg transition-colors duration-200 text-primary-700"
                   >
-                    <Building2 className="h-4 w-4 text-slate-600" />
-                    <span className="text-sm text-slate-700 font-medium">
+                    <Building2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">
                       {selectedConfig?.tenant_name || 'Sélectionner un tenant'}
                     </span>
-                    <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${showTenantMenu ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showTenantMenu ? 'rotate-180' : ''}`} />
                   </button>
                   {showTenantMenu && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border z-50 overflow-hidden">
-                      <div className="px-4 py-2 bg-slate-50 border-b text-xs font-medium text-slate-500">
-                        TENANTS CONFIGURÉS
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-secondary-100 z-50 overflow-hidden">
+                      <div className="px-4 py-2 bg-secondary-50 border-b border-secondary-100 text-xs font-semibold text-primary-700 uppercase tracking-wider">
+                        Tenants configurés
                       </div>
                       {configs.map((config) => (
                         <button
                           key={config.id}
                           onClick={() => handleSelectTenant(config)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
-                              selectedConfig?.id === config.id ? 'bg-primary-50' : ''
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent-50 transition-colors duration-150 ${
+                              selectedConfig?.id === config.id ? 'bg-accent-100' : ''
                             }`}
                         >
-                          <Building2 className={`h-5 w-5 ${selectedConfig?.id === config.id ? 'text-primary-600' : 'text-slate-400'}`} />
+                          <Building2 className={`h-5 w-5 ${selectedConfig?.id === config.id ? 'text-primary-700' : 'text-primary-400'}`} />
                           <div className="flex-1">
-                            <span className={`text-sm font-medium ${selectedConfig?.id === config.id ? 'text-primary-700' : 'text-slate-700'}`}>
+                            <span className={`text-sm font-medium ${selectedConfig?.id === config.id ? 'text-primary-800' : 'text-primary-700'}`}>
                               {config.tenant_name || `Tenant ${config.id}`}
                             </span>
                           </div>
                           {config.is_default && (
-                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
+                            <span className="text-xs bg-secondary-200 text-primary-800 px-2 py-0.5 rounded-full font-medium">
                               Défaut
                             </span>
                           )}
@@ -368,10 +354,10 @@ function App() {
               )}
               <button
                 onClick={() => setCurrentPage('settings')}
-                className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2.5 hover:bg-accent-100 rounded-lg transition-colors duration-200"
                 title="Paramètres"
               >
-                <SettingsIcon className="h-6 w-6 text-slate-600" />
+                <SettingsIcon className="h-6 w-6 text-primary-700" />
               </button>
             </div>
           </div>
@@ -380,52 +366,64 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-slate-900">Vue d'ensemble</h2>
+          <h2 className="text-lg font-semibold text-primary-900">Vue d'ensemble</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <Shield className="h-6 w-6 text-blue-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-secondary-100 p-6 flex items-center gap-4 hover:shadow-lg hover:border-accent-300 hover:bg-accent-50 transition-all duration-300 cursor-pointer group">
+              <div className="p-3 bg-secondary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Shield className="h-6 w-6 text-primary-700" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Secure Score</p>
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-sm font-medium text-primary-600">Secure Score</p>
+                <p className="text-3xl font-bold text-primary-900">
                   {data?.security?.percentage?.toFixed(1) || '0'}%
                 </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="p-3 bg-green-100 rounded-xl">
-                <Key className="h-6 w-6 text-green-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-secondary-100 p-6 flex items-center gap-4 hover:shadow-lg hover:border-accent-300 hover:bg-accent-50 transition-all duration-300 cursor-pointer group">
+              <div className="p-3 bg-secondary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Key className="h-6 w-6 text-primary-700" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Licences</p>
-                <p className="text-3xl font-bold text-slate-900">
-                  {data?.licenses?.summary?.total_consumed || 0} <span className="text-slate-400 font-normal text-lg">/ {data?.licenses?.summary?.total_licenses || 0}</span>
+                <p className="text-sm font-medium text-primary-600">Licences</p>
+                <p className="text-3xl font-bold text-primary-900">
+                  {data?.licenses?.summary?.total_consumed || 0} <span className="text-primary-400 font-normal text-lg">/ {data?.licenses?.summary?.total_licenses || 0}</span>
                 </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="p-3 bg-orange-100 rounded-xl">
-                <Lock className="h-6 w-6 text-orange-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-secondary-100 p-6 flex items-center gap-4 hover:shadow-lg hover:border-accent-300 hover:bg-accent-50 transition-all duration-300 cursor-pointer group">
+              <div className="p-3 bg-secondary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Lock className="h-6 w-6 text-primary-700" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">MFA Coverage</p>
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-sm font-medium text-primary-600">MFA Coverage</p>
+                <p className="text-3xl font-bold text-primary-900">
                   {data?.mfa?.capable_percentage?.toFixed(1) || '0.0'}%
                 </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className={`p-3 rounded-xl ${(data?.compliance?.summary?.compliant_percentage || 0) >= 80 ? 'bg-green-100' : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 ? 'bg-amber-100' : 'bg-red-100'}`}>
-                <CheckCircle className={`h-6 w-6 ${(data?.compliance?.summary?.compliant_percentage || 0) >= 80 ? 'text-green-600' : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 ? 'text-amber-600' : 'text-red-600'}`} />
+            <div className="bg-white rounded-xl shadow-sm border border-secondary-100 p-6 flex items-center gap-4 hover:shadow-lg hover:border-accent-300 hover:bg-accent-50 transition-all duration-300 cursor-pointer group">
+              <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 ${
+                  (data?.compliance?.summary?.compliant_percentage || 0) >= 80 
+                    ? 'bg-success-light' 
+                    : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 
+                    ? 'bg-warning-light'
+                    : 'bg-danger-light'
+                }`}>
+                <CheckCircle className={`h-6 w-6 ${
+                  (data?.compliance?.summary?.compliant_percentage || 0) >= 80 
+                    ? 'text-success' 
+                    : (data?.compliance?.summary?.compliant_percentage || 0) >= 50 
+                    ? 'text-warning'
+                    : 'text-danger'
+                }`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Conformité</p>
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-sm font-medium text-primary-600">Conformité</p>
+                <p className="text-3xl font-bold text-primary-900">
                   {data?.compliance?.summary?.compliant_percentage?.toFixed(1) || '0'}%
                 </p>
               </div>
@@ -433,15 +431,14 @@ function App() {
         </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SecureScoreWidget data={data?.security} />
-            <LicenseWidget data={data?.licenses} />
-            <MfaWidget data={data?.mfa} />
-            <DeviceOsWidget data={data?.devicesOs} />
-            <DeviceComplianceWidget data={data?.compliance} />
-            <UserSecurityAlertsWidget data={data?.userAlerts} />
-            <RiskyUsersWidget data={data?.risky} />
+            <SecureScoreWidget data={data?.security as any} />
+            <AdminRolesWidget data={data?.admins as any} />
+            <LicenseWidget data={data?.licenses as any} />
+            <MfaWidget data={data?.mfa as any} />
+            <DeviceOsWidget data={data?.devicesOs as any} />
+            <DeviceComplianceWidget data={data?.compliance as any} />
           </div>
-      </main>
+        </main>
     </div>
   )
 }
