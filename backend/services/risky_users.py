@@ -57,6 +57,22 @@ async def get_risky_users():
                     "users": users_detail,
                     "error": None
                 }
+            elif response.status_code == 403:
+                error_data = response.json()
+                msg = error_data.get("error", {}).get("message", "")
+                if "not licensed" in msg.lower():
+                    return {
+                        "total_risky_users": 0,
+                        "risk_levels": {"high": 0, "medium": 0, "low": 0},
+                        "users": [],
+                        "error": "Licence Entra ID P2 / E5 requise pour cette fonctionnalité"
+                    }
+                return {
+                    "total_risky_users": 0,
+                    "risk_levels": {"high": 0, "medium": 0, "low": 0},
+                    "users": [],
+                    "error": "Accès refusé (403)"
+                }
             else:
                 return {
                     "total_risky_users": 0,
